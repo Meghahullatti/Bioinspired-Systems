@@ -1,0 +1,97 @@
+import random
+import math
+
+# Target function
+def target_function(x):
+    return x**2 + 2*x + 1
+
+# Parameters
+POP_SIZE = 10
+GENERATIONS = 20
+MUTATION_RATE = 0.1
+CROSSOVER_RATE = 0.7
+
+# Possible operators and terminals
+OPERATORS = ['+', '-', '*']
+TERMINALS = ['x', '1', '2', '3']
+
+# Function to create a random individual (expression)
+def create_individual():
+    return random.choice(TERMINALS) + random.choice(OPERATORS) + random.choice(TERMINALS)
+
+# Evaluate the fitness of an individual (expression)
+def evaluate_expression(expression, x_value):
+    try:
+        return eval(expression.replace('x', str(x_value)))
+    except:
+        return float('inf')  # Return a large value for invalid expressions
+
+# Calculate fitness (total error between expression and target function)
+def calculate_fitness(expression):
+    error = 0
+    for x in range(-5, 6):  # Use x values from -5 to 5
+        predicted = evaluate_expression(expression, x)
+        target = target_function(x)
+        error += abs(predicted - target)
+    return error
+
+# Tournament selection
+def tournament_selection(population):
+    tournament = random.sample(population, 3)
+    best_individual = min(tournament, key=calculate_fitness)
+    return best_individual
+
+# Crossover (simple string concatenation)
+def crossover(parent1, parent2):
+    return parent1[:2] + parent2[2:]
+
+# Mutation (randomly replace an operator or terminal)
+def mutate(expression):
+    if random.random() < MUTATION_RATE:
+        mutated = list(expression)
+        mutation_point = random.randint(0, len(expression)-1)
+        mutated[mutation_point] = random.choice(TERMINALS + OPERATORS)
+        return ''.join(mutated)
+    return expression
+
+# Main function for GEP
+def gene_expression_programming():
+    population = [create_individual() for _ in range(POP_SIZE)]
+    best_solution = None
+    best_fitness = float('inf')
+
+    for generation in range(GENERATIONS):
+        new_population = []
+        for _ in range(POP_SIZE):
+            parent1 = tournament_selection(population)
+            parent2 = tournament_selection(population)
+            
+            # Apply crossover
+            if random.random() < CROSSOVER_RATE:
+                child = crossover(parent1, parent2)
+            else:
+                child = parent1
+            
+            # Apply mutation
+            child = mutate(child)
+            new_population.append(child)
+        
+        population = new_population
+        
+        # Evaluate best solution
+        for individual in population:
+            fitness = calculate_fitness(individual)
+            if fitness < best_fitness:
+                best_fitness = fitness
+                best_solution = individual
+        
+        if generation % 5 == 0:
+            print(f"Generation {generation}: Best fitness = {best_fitness:.2f}")
+    
+    print("\nBest solution found:")
+    print(f"Expression: {best_solution}")
+    print(f"Fitness (error): {best_fitness:.2f}")
+
+# Run the algorithm
+if __name__ == "__main__":
+    gene_expression_programming()
